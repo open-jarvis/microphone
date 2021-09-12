@@ -1,0 +1,4 @@
+open-jarvis-sdk
+websocket-client
+
+# apt install python3-pyaudio -y
