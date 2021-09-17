@@ -8,6 +8,7 @@ import zlib
 import time
 import signal
 import base64
+import random
 from classes.Microphone import Microphone
 from classes.Stream import Stream
 from jarvis_sdk import Connection, Highway, Storage
@@ -38,22 +39,23 @@ def start_stream():
             compressed_length = len(chunk_compressed)
             compression_rate = (1 - compressed_length / full_length)
             stream.send({
-                "$meta": {
-                    **mic.config
-                },
-                "$internals": {
-                    "timestamp": start,
-                    "compression": {
-                        "enabled": True,
-                        "time": compression_time,
-                        "length": {
-                            "full": full_length,
-                            "compressed": compression_time
-                        },
-                        "ratio": compression_rate
-                    }
-                },
-                "data": base64.b64encode(chunk_compressed).decode("utf-8")
+                "data": "test-" + ''.join(random.choice("abcdef1234567890") for i in range(5))
+                # "$meta": {
+                #     **mic.config
+                # },
+                # "$internals": {
+                #     "timestamp": start,
+                #     "compression": {
+                #         "enabled": True,
+                #         "time": compression_time,
+                #         "length": {
+                #             "full": full_length,
+                #             "compressed": compressed_length
+                #         },
+                #         "ratio": compression_rate
+                #     }
+                # },
+                # "data": base64.b64encode(chunk_compressed).decode("utf-8")
             })
         mic.on_chunk = _on_chunk
         mic.start()
