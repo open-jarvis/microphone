@@ -7,7 +7,7 @@ import pyaudio
 
 
 class Microphone:
-    def __init__(self, chunks: int = 1024 * 64, sample_format = pyaudio.paInt16, channels: int = 4, sample_rate: int = 44100) -> None:
+    def __init__(self, chunks: int = 1024 * 20, sample_format = pyaudio.paInt16, channels: int = 4, sample_rate: int = 44100) -> None:
         self.on_chunk = None
         self.config = {
             "frames_per_buffer": chunks,

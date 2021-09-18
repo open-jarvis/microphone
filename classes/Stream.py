@@ -16,12 +16,13 @@ class Stream:
         self.on_error = None
         self.on_ready = None
         self.on_close = None
+        self.on_local_error = None
         self.stream_id = None
         self.type = None
 
     def open(self, type: str):
         self.type = type
-        self.comm = Connection(self.id, self.host, self.port, debug=True)
+        self.comm = Connection(self.id, self.host, self.port, debug=False)
         def _on_comm_open():
             def _on_stream_open(msg):
                 # msg looks like
@@ -45,10 +46,22 @@ class Stream:
 
     def send(self, data: dict):
         assert isinstance(self.comm, Connection), "No communication object ready"
-        assert self.ready, "Connection not ready yet"
-        self.comm.request(f"stream/{self.type}/data", payload={**data, "$id": self.stream_id}, callback=None)
+        if not self.ready:
+            print("Warning: WebSocket not ready yet")
+            return
+        try:
+            self.comm.request(f"stream/{self.type}/data", payload={**data, "$id": self.stream_id}, callback=None)
+        except Exception as e: # re-establish connection
+            print("+ An exception occured, reconnecting", e)
+            assert self.stream_id is not None, "No stream established yet... Call open() first"
+            self.ready = False
+            def on_reconnect():
+                print(f"+ Stream {self.stream_id} reconnected")
+                self.ready = True
+            self.comm.reconnect(on_reconnect)
 
     def close(self):
         self.comm.request(f"stream/{self.type}/close", payload={"$id": self.stream_id}, callback=None)
+        self.comm.disconnect()
         if callable(self.on_close):
             self.on_close()

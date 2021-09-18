@@ -6,9 +6,9 @@ Copyright (c) 2021 Philipp Scheer
 import os
 import zlib
 import time
-import signal
 import base64
-import random
+import signal
+import threading
 from classes.Microphone import Microphone
 from classes.Stream import Stream
 from jarvis_sdk import Connection, Highway, Storage
@@ -39,23 +39,24 @@ def start_stream():
             compressed_length = len(chunk_compressed)
             compression_rate = (1 - compressed_length / full_length)
             stream.send({
-                "data": "test-" + ''.join(random.choice("abcdef1234567890") for i in range(5))
-                # "$meta": {
-                #     **mic.config
-                # },
-                # "$internals": {
-                #     "timestamp": start,
-                #     "compression": {
-                #         "enabled": True,
-                #         "time": compression_time,
-                #         "length": {
-                #             "full": full_length,
-                #             "compressed": compressed_length
-                #         },
-                #         "ratio": compression_rate
-                #     }
-                # },
-                # "data": base64.b64encode(chunk_compressed).decode("utf-8")
+                "$meta": {
+                    "$id": stream.stream_id,
+                    **mic.config
+                },
+                "$internals": {
+                    "timestamp": start,
+                    "compression": {
+                        "enabled": True, # TODO: set to true
+                        "time": compression_time,
+                        "length": {
+                            "full": full_length,
+                            "compressed": compressed_length
+                        },
+                        "ratio": compression_rate
+                    }
+                },
+                # "data": base64.b64encode(b"test").decode("utf-8"),
+                "data": base64.b64encode(chunk_compressed).decode("utf-8")
             })
         mic.on_chunk = _on_chunk
         mic.start()
@@ -107,6 +108,15 @@ while True:
         time.sleep(1)
     except KeyboardInterrupt:
         stop_mic_stream()
+
+
+        exit_ts = time.time() + 5
+
+        while time.time() < exit_ts:
+            print("============================================")
+            for thread in threading.enumerate(): 
+                print(thread.name, thread.is_alive())
+            time.sleep(0.9)
 
         try:
             os._exit()
