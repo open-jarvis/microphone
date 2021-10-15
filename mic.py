@@ -11,11 +11,13 @@ import signal
 import threading
 from classes.Microphone import Microphone
 from classes.Stream import Stream
-from jarvis_sdk import Connection, Highway, Storage
+from jarvis_sdk import Connection, Storage
 
 
+Storage.PATH = os.path.dirname(os.path.abspath(__file__))
 DEVICE_ID = Storage.get("dev-id", None)
 HOST = Storage.get("host", "jarvis.fipsi.at")
+
 
 stream = None
 mic = None
@@ -26,8 +28,9 @@ def start_stream():
 
     print(f"+ Connecting to {HOST} with device {DEVICE_ID}")
 
-    stream = Stream(DEVICE_ID, host=HOST)
-    mic = Microphone()
+    stream  = Stream(DEVICE_ID, host=HOST)
+    mic     = Microphone()
+    seconds = 0.5
 
     def _stream_ready():
         print(f"+ Stream {stream.stream_id} sending")
@@ -41,12 +44,17 @@ def start_stream():
             stream.send({
                 "$meta": {
                     "$id": stream.stream_id,
-                    **mic.config
+                    "format": "wave",
+                    "seconds": seconds,
+                    "chunks": int(mic.fs / mic.chunk * seconds),
+                    "channels": mic.channels,
+                    "framerate": mic.fs
                 },
                 "$internals": {
                     "timestamp": start,
                     "compression": {
-                        "enabled": True, # TODO: set to true
+                        # "enabled": True,
+                        "enabled": False,
                         "time": compression_time,
                         "length": {
                             "full": full_length,
@@ -55,11 +63,9 @@ def start_stream():
                         "ratio": compression_rate
                     }
                 },
-                # "data": base64.b64encode(b"test").decode("utf-8"),
-                "data": base64.b64encode(chunk_compressed).decode("utf-8")
+                "data": base64.b64encode(chunk).decode("utf-8"),
             })
-        mic.on_chunk = _on_chunk
-        mic.start()
+        mic.record(_on_chunk, seconds=seconds)
 
     def _stream_close():
         print("+ Stream closing")
@@ -91,7 +97,6 @@ def start_mic_stream():
         con.on_open = _on_open
     else:
         start_stream()
-
 
 def stop_mic_stream():
     if mic:
