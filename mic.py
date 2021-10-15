@@ -24,7 +24,7 @@ mic = None
 
 
 def start_stream():
-    global stream, mic
+    global stream, mic, DEVICE_ID
 
     print(f"+ Connecting to {HOST} with device {DEVICE_ID}")
 
@@ -83,15 +83,18 @@ def start_stream():
 
 def start_mic_stream():
     global DEVICE_ID
+    print(f"+ Device ID is {DEVICE_ID}")
     if DEVICE_ID is None:
         def _on_open():
             def _on_device_id(msg):
                 if msg.get("success"):
+                    print("< Here you are:", msg)
                     DEVICE_ID = msg.get("result", {}).get("id")
                     Storage.set("dev-id", DEVICE_ID)
                     start_stream()
                 else:
                     print("Error: Failed to get ID", msg)
+            print("> Can you give me an anonymous ID?")
             con.request("device/anonymous", payload={}, callback=_on_device_id)
         con = Connection(None)
         con.on_open = _on_open

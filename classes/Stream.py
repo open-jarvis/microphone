@@ -50,7 +50,7 @@ class Stream:
             print("Warning: WebSocket not ready yet")
             return
         try:
-            self.comm.request(f"stream/{self.type}/data", payload={**data, "$devid": self.id, "$id": self.stream_id}, callback=None)
+            self.comm.request(f"stream/{self.type}/data", payload={**data, "$id": self.stream_id}, callback=None)
         except Exception as e: # re-establish connection
             print("+ An exception occured, reconnecting", e)
             assert self.stream_id is not None, "No stream established yet... Call open() first"
@@ -61,7 +61,7 @@ class Stream:
             self.comm.reconnect(on_reconnect)
 
     def close(self):
-        self.comm.request(f"stream/{self.type}/close", payload={"$devid": self.id, "$id": self.stream_id}, callback=None)
+        self.comm.request(f"stream/{self.type}/close", payload={"$id": self.stream_id}, callback=None)
         self.comm.disconnect()
         if callable(self.on_close):
             self.on_close()
