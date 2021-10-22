@@ -4,6 +4,7 @@ Copyright (c) 2021 Philipp Scheer
 
 
 import os
+import sys
 import zlib
 import time
 import base64
@@ -26,9 +27,21 @@ mic = None
 def start_stream():
     global stream, mic, DEVICE_ID
 
+    if DEVICE_ID is None:
+        DEVICE_ID = Storage.get("dev-id", None)
+    if DEVICE_ID is None:
+        print(f"+ No device ID found")
+        exit(1)
+
     print(f"+ Connecting to {HOST} with device {DEVICE_ID}")
 
     stream  = Stream(DEVICE_ID, host=HOST)
+
+    def hj(x):
+        # print(x)
+        return x
+    stream.hijack = hj
+
     mic     = Microphone()
     seconds = 0.5
 
@@ -53,7 +66,6 @@ def start_stream():
                 "$internals": {
                     "timestamp": start,
                     "compression": {
-                        # "enabled": True,
                         "enabled": False,
                         "time": compression_time,
                         "length": {
@@ -88,12 +100,14 @@ def start_mic_stream():
         def _on_open():
             def _on_device_id(msg):
                 if msg.get("success"):
-                    print("< Here you are:", msg)
+                    print("< Here you are:", msg.get("result", {}).get("id"))
                     DEVICE_ID = msg.get("result", {}).get("id")
                     Storage.set("dev-id", DEVICE_ID)
                     start_stream()
                 else:
-                    print("Error: Failed to get ID", msg)
+                    print("< No!")
+                    print("\nError: Failed to get ID", msg)
+                    exit(1)
             print("> Can you give me an anonymous ID?")
             con.request("device/anonymous", payload={}, callback=_on_device_id)
         con = Connection(None)
