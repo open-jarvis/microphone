@@ -109,7 +109,7 @@ def start_mic_stream():
                     print("\nError: Failed to get ID", msg)
                     exit(1)
             print("> Can you give me an anonymous ID?")
-            con.request("device/anonymous", payload={}, callback=_on_device_id)
+            con.request("device/anonymous", payload={"type": "microphone"}, callback=_on_device_id)
         con = Connection(None)
         con.on_open = _on_open
     else:
